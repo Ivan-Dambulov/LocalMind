@@ -1,3 +1,5 @@
+<img width="2532" height="1197" alt="Screenshot 2 - 2026-10-10 210247" src="https://github.com/user-attachments/assets/977d6d59-70a6-4fd2-b33d-97f68460db97" />
+
 # LocalMind
 
 **Privacy-first Agentic RAG Knowledge Assistant**
