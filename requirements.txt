@@ -1,0 +1,47 @@
+# Core
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+tqdm>=4.66.0
+
+# Document parsing
+pypdf>=4.0.0
+python-docx>=1.1.0
+openpyxl>=3.1.0
+markdown>=3.5.0
+
+# Embeddings & Vector Store
+sentence-transformers>=3.0.0
+chromadb>=0.5.0
+rank-bm25>=0.2.2
+numpy>=1.26.0
+
+# LLM (local)
+llama-cpp-python>=0.3.0
+
+# Agent / orchestration (lightweight; LangGraph optional later)
+# langgraph>=0.2.0
+# langchain-core>=0.3.0
+
+# Web search (no API key)
+ddgs>=0.1.0
+
+# UI
+streamlit>=1.38.0
+
+# Evaluation
+ragas>=0.1.0
+datasets>=2.20.0
+
+# Optional API
+# fastapi>=0.112.0
+# uvicorn>=0.30.0
+
+# Utils
+tiktoken>=0.7.0
+tenacity>=8.5.0
+
+# Optional but recommended for better hardware detection
+psutil>=5.9.0
+# pynvml>=11.0.0          # NVIDIA only
+# py-cpuinfo>=9.0.0       # nicer CPU names
