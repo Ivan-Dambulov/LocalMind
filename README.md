@@ -251,10 +251,4 @@ LocalMind reuses and extends that inference approach inside a focused Agentic RA
 
 ---
 
-## License
-
-MIT
-
----
-
 Built by [Ivan Dambulov](https://github.com/Ivan-Dambulov)
