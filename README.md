@@ -240,6 +240,3 @@ Same pipeline as **Documents → Build index** (reset collection, embed, upsert)
 **[LocalBot](https://github.com/Ivan-Dambulov/LocalBot)** — private desktop AI assistant (local GGUF, hardware-aware loading, web search, documents).  
 LocalMind reuses that inference approach inside a focused Agentic RAG system.
 
----
-
-Built by [Ivan Dambulov](https://github.com/Ivan-Dambulov)
