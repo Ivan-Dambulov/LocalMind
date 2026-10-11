@@ -1,16 +1,40 @@
 """Tools the agent can call."""
 from __future__ import annotations
 
-from typing import List
+from dataclasses import dataclass, field
 from ddgs import DDGS
 
 from src.retrieval.hybrid import HybridRetriever
+from src.config import settings
 
 
-def local_rag_tool(retriever: HybridRetriever, query: str, top_k: int = 5) -> str:
+@dataclass
+class LocalRagResult:
+    text: str
+    hits: list[dict] = field(default_factory=list)
+    max_score: float = 0.0
+    mean_top3: float = 0.0
+
+
+def local_rag_tool(
+    retriever: HybridRetriever,
+    query: str,
+    top_k: int | None = None,
+) -> LocalRagResult:
+    top_k = top_k or settings.top_k
     hits = retriever.search(query, top_k=top_k)
     if not hits:
-        return "No relevant documents found in the local knowledge base."
+        return LocalRagResult(
+            text="No relevant documents found in the local knowledge base.",
+            hits=[],
+            max_score=0.0,
+            mean_top3=0.0,
+        )
+
+    scores = [float(h.get("score", 0.0)) for h in hits]
+    max_score = max(scores) if scores else 0.0
+    top3 = scores[:3]
+    mean_top3 = sum(top3) / len(top3) if top3 else 0.0
 
     parts = []
     for i, h in enumerate(hits, 1):
@@ -19,7 +43,13 @@ def local_rag_tool(retriever: HybridRetriever, query: str, top_k: int = 5) -> st
         page = meta.get("page", "")
         cite = f"{source}" + (f", page {page}" if page else "")
         parts.append(f"[{i}] (score={h['score']:.3f}) {cite}\n{h['content']}")
-    return "\n\n".join(parts)
+
+    return LocalRagResult(
+        text="\n\n".join(parts),
+        hits=hits,
+        max_score=max_score,
+        mean_top3=mean_top3,
+    )
 
 
 def web_search_tool(query: str, max_results: int = 5) -> str:

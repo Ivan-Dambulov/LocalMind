@@ -1,63 +1,59 @@
-<img width="2532" height="1197" alt="Screenshot 2 - 2026-10-10 210247" src="https://github.com/user-attachments/assets/977d6d59-70a6-4fd2-b33d-97f68460db97" />
-
 # LocalMind
 
-**Privacy-first Agentic RAG Knowledge Assistant**
+**Privacy-first Agentic RAG knowledge assistant**
 
-LocalMind is a local-first Agentic RAG system that answers questions over **your documents** and the **web**.  
-An agent decides which tools to use, hybrid retrieval finds the right context, and answers include source citations.
+LocalMind answers questions over **your documents** and the **web**.  
+An agent chooses the right tools, hybrid retrieval finds context, and answers include sources.  
+Weak local matches are blocked by a **retrieval score threshold** so the system does not sound confident when the docs do not support the answer.
 
-> Built to demonstrate production-oriented Generative AI skills: RAG, embeddings, vector databases, AI agents, evaluation, and end-to-end project ownership.
+> Local inference uses GGUF models via `llama-cpp-python`, with hardware detection and optional install of CUDA / Metal / ROCm builds from the Settings UI.
 
 ---
 
 ## Features
 
 | Feature | Description |
-|---------|-------------|
+|--------|-------------|
 | **Agentic routing** | Chooses `local_rag`, `web_search`, `both`, or `none` per query |
-| **Hybrid retrieval** | Dense embeddings + BM25 keyword search with score fusion |
-| **Citations** | Answers reference source files (and pages when available) |
-| **Local inference** | GGUF models via `llama-cpp-python` with auto GPU detection |
-| **Document ingestion** | PDF, DOCX, TXT, Markdown |
-| **Modern UI** | Streamlit chat interface with tool badges and source chips |
-| **Clean architecture** | Ingestion → Retrieval → Agent → UI, easy to extend |
+| **Hybrid retrieval** | Dense embeddings + BM25, fused with tunable α |
+| **Score threshold** | Rejects weak local hits → web fallback or refuse |
+| **Citations** | Source chips and retrieved context in the UI |
+| **Document UI** | Upload / delete files and **Build index** in the browser |
+| **Settings UI** | Model path, GPU backend preference, install GPU `llama-cpp-python` |
+| **Hardware acceleration** | Detects CUDA, Metal, ROCm; Auto / CPU / custom GPU layers |
+| **Local GGUF** | Inference adapted from [LocalBot](https://github.com/Ivan-Dambulov/LocalBot) |
+| **Easy start** | `start.bat` / `start.ps1` / `start.sh` / `python run.py` |
 
 ---
 
 ## Architecture
 
 ```text
-User Query
-    |
-    v
-+------------------+
-|  Agent (ReAct)   |  decides tools
-+--------+---------+
-         |
-    +----+----+-----------+
-    |         |           |
-    v         v           v
-Local RAG  Web Search  (future tools)
-(hybrid)   (DuckDuckGo)
-    |
-    v
-Retriever
-  - Dense (sentence-transformers)
-  - BM25
-  - Score fusion
-    |
-    v
-Vector Store (Chroma) + metadata
-    |
-    v
-LLM (local GGUF)
-    |
-    v
-Answer + Citations
+User query
+    │
+    ▼
+┌─────────────────────┐
+│  Agent (router)     │  propose tool
+└──────────┬──────────┘
+           │
+           ▼
+    Local hybrid search?
+           │
+     ┌─────┴─────┐
+     │ score OK? │
+     └─────┬─────┘
+        yes│    no → web fallback or refuse
+           ▼
+    Context (local and/or web)
+           │
+           ▼
+    Local GGUF LLM
+           │
+           ▼
+    Answer + sources + route metadata
 ```
 
-**Inference** reuses hardware-aware loading logic adapted from [LocalBot](https://github.com/Ivan-Dambulov/LocalBot) (CUDA / Metal / ROCm / CPU).
+**Retrieval score:** after local search, if `max_score < retrieval_min_score`, local chunks are not used for generation.
 
 ---
 
@@ -65,123 +61,117 @@ Answer + Citations
 
 ```text
 LocalMind/
-├── src/
-│   ├── ingestion/       # Load, chunk documents
-│   ├── retrieval/       # Embeddings, Chroma, hybrid search
-│   ├── inference/       # GGUF runtime + hardware detection
-│   ├── agent/           # Tool routing + prompts
-│   ├── evaluation/      # Golden set + metrics (in progress)
-│   ├── ui/              # Streamlit app
-│   ├── llm.py           # LLM adapter
-│   └── config.py        # Settings (.env)
-├── data/
-│   ├── raw/             # Put your documents here
-│   ├── processed/       # Chunk JSONL
-│   └── vectorstore/     # Chroma DB
-├── docs/                # Architecture, WBS
-├── scripts/
-│   ├── ingest.py
-│   └── evaluate.py
+├── start.bat / start.ps1 / start.sh / run.py   # easy launchers
 ├── requirements.txt
-└── README.md
+├── .env                                        # LLM_MODEL_PATH, GPU settings
+├── src/
+│   ├── config.py
+│   ├── llm.py
+│   ├── ingestion/          # load, chunk, pipeline
+│   ├── retrieval/          # embeddings, Chroma, hybrid search
+│   ├── inference/          # GGUF runtime, hardware, backends
+│   ├── agent/              # router, tools, score gate
+│   ├── services/           # ingest, config, acceleration install
+│   └── ui/app.py           # Streamlit UI
+├── data/
+│   ├── raw/                # your documents
+│   ├── processed/          # chunks.jsonl
+│   └── vectorstore/        # Chroma DB
+├── scripts/ingest.py       # optional CLI ingest
+└── docs/                   # architecture, WBS
 ```
 
 ---
 
 ## Quick start
 
-### 1. Setup
+### Windows (easiest)
+
+Double-click **`start.bat`**
+
+Or in PowerShell:
+
+```powershell
+cd path\to\LocalMind
+.\start.ps1
+```
+
+### macOS / Linux
 
 ```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-
-pip install -r requirements.txt
+chmod +x start.sh
+./start.sh
 ```
 
-### 2. Configure the model
-
-Create a `.env` file in the project root:
-
-```env
-LLM_MODEL_PATH=C:/path/to/your/model.gguf
-```
-
-Use **forward slashes** on Windows.  
-Any GGUF model works (e.g. Qwen, Llama, Mistral quantized).
-
-Without a model path the app runs in **mock mode** (pipeline still works; answers are placeholders).
-
-### 3. Add documents
-
-Copy PDF, DOCX, TXT, or Markdown files into:
-
-```text
-data/raw/
-```
-
-### 4. Ingest
+### Already in a venv
 
 ```bash
-python scripts/ingest.py
-```
-
-This loads, chunks, embeds, and stores documents in Chroma.
-
-### 5. Run the UI
-
-```bash
+python run.py
+# or
 streamlit run src/ui/app.py
 ```
 
-Open the URL shown in the terminal (usually `http://localhost:8501`).
+The first run of `start.bat` / `start.sh` can create `.venv` and install dependencies.
 
 ---
 
-## How it works
+## First-time setup in the UI
 
-### Ingestion
-
-1. Load documents (`loader.py`)
-2. Split into overlapping chunks (`chunker.py`)
-3. Embed with SentenceTransformers
-4. Upsert into Chroma + keep chunks for BM25
-
-### Retrieval
-
-For each query:
-
-1. **Dense search** — semantic similarity in Chroma  
-2. **BM25** — keyword match  
-3. **Fusion** — `score = α × dense + (1 − α) × BM25`  
-4. Return top-k chunks with metadata  
-
-`α` is adjustable in the UI sidebar (1.0 = pure semantic, 0.0 = pure keyword).
-
-### Agent
-
-1. LLM chooses a tool: local docs, web, both, or none  
-2. Tools run and build context  
-3. Final answer is generated with citation instructions  
+1. **Settings**
+   - Set **GGUF model path** (use forward slashes on Windows), e.g.  
+     `C:/Users/you/AppData/Roaming/LocalBot/models/your-model.gguf`
+   - **Save model path**
+2. **Hardware acceleration**
+   - Check CUDA / Metal / ROCm detection
+   - If GPU is present but not used: open **Install matching llama-cpp-python**, pick the backend, **Install**
+   - Preferred backend: **Auto**, GPU layers: **-1**, **Save**, **Reload engine**
+3. **Documents**
+   - Upload PDF / DOCX / TXT / MD → **Save uploads**
+   - **Build index**
+4. **Chat**
+   - Ask questions  
+   - Sidebar: Top-K, hybrid α, **min retrieval score**, weak-local action (web / refuse)
 
 ---
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LLM_MODEL_PATH` | _(empty)_ | Path to GGUF model |
-| `LLM_CONTEXT_SIZE` | `4096` | Context window |
-| `LLM_TEMPERATURE` | `0.1` | Generation temperature |
-| `HYBRID_ALPHA` | `0.6` | Dense vs BM25 weight |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Sentence-transformers model |
+### `.env` (project root)
 
-All of these can also be changed in `src/config.py`.
+```env
+LLM_MODEL_PATH=C:/path/to/model.gguf
+LLM_GPU_LAYERS=-1
+LLM_PREFERRED_BACKEND=auto
+```
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `LLM_MODEL_PATH` | empty | Path to GGUF (empty = mock mode) |
+| `LLM_GPU_LAYERS` | `-1` | `-1` auto, `0` CPU, `1+` fixed layers |
+| `LLM_PREFERRED_BACKEND` | `auto` | `auto` / `cuda` / `metal` / `rocm` / `cpu` |
+| `LLM_CONTEXT_SIZE` | `4096` | Context window cap |
+| `LLM_TEMPERATURE` | `0.1` | Generation temperature |
+
+Also configurable in `src/config.py` and the UI:
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `top_k` | `5` | Chunks retrieved |
+| `hybrid_alpha` | `0.6` | Dense vs BM25 weight |
+| `retrieval_min_score` | `0.35` | Min score to trust local docs |
+| `weak_local_action` | `web` | `web` fallback or `refuse` |
+
+---
+
+## UI overview
+
+| Tab | Purpose |
+|-----|---------|
+| **Chat** | Ask questions; see tool badge, scores, overrides, sources |
+| **Documents** | Upload / delete files; build or rebuild the vector index |
+| **Settings** | Model path, hardware status, install GPU `llama-cpp-python`, acceleration mode |
+
+**Sidebar:** retrieval controls, min score, weak-local action, reload engine, clear chat.
 
 ---
 
@@ -190,66 +180,57 @@ All of these can also be changed in `src/config.py`.
 | Layer | Technology |
 |-------|------------|
 | Language | Python 3.10+ |
+| UI | Streamlit |
 | Embeddings | `sentence-transformers` |
 | Vector DB | Chroma |
 | Keyword search | `rank-bm25` |
 | LLM | `llama-cpp-python` (GGUF) |
 | Web search | DuckDuckGo (`ddgs`) — no API key |
-| UI | Streamlit |
 | Documents | `pypdf`, `python-docx` |
-| Config | `pydantic-settings` |
+| Config | `pydantic-settings` + `.env` |
+
+---
+
+## GPU notes
+
+- **Detection** shows whether NVIDIA / Apple / AMD hardware is present.
+- **Inference** uses whatever backend your installed `llama-cpp-python` was built with.
+- Use **Settings → Install matching llama-cpp-python** to install CUDA / Metal / ROCm / CPU builds into the current venv.
+- After installing a GPU build: Preferred backend **Auto**, layers **-1**, **Reload engine**.
+- If the UI shows GPU hardware but backend stays **cpu**, the wheel/build likely has no GPU support — reinstall with the matching backend.
+
+---
+
+## Optional CLI ingest
+
+```bash
+python scripts/ingest.py
+```
+
+Same pipeline as **Documents → Build index** (reset collection, embed, upsert).
 
 ---
 
 ## Roadmap
 
-| Phase | Item | Status |
-|-------|------|--------|
-| 1 | Ingestion + chunking + Chroma | Done |
-| 1 | Hybrid retrieval (dense + BM25) | Done |
-| 1 | Agentic tool routing | Done |
-| 1 | Streamlit UI | Done |
-| 1 | Local GGUF inference | Done |
-| 2 | Golden evaluation set + metrics | Planned |
-| 3 | Document upload from UI | Planned |
-| 3 | Streaming answers | Planned |
-| 4 | FastAPI endpoint | Planned |
-| 4 | Reranker + better chunking | Planned |
-
----
-
-## Evaluation philosophy
-
-A RAG system should not ship on “it seems to work.”
-
-- Golden question set (`data/golden_set.json`)
-- Metrics: faithfulness, answer relevance, context precision
-- Track scores when changing chunk size, hybrid α, or prompts
-- Document failure cases and fixes
-
-(Evaluation harness is next on the roadmap.)
-
----
-
-## Path to production
-
-What would come next for a real deployment:
-
-- API layer (FastAPI) + auth
-- Incremental / scheduled ingestion
-- Observability (latency, retrieval quality, feedback)
-- Optional cloud LLM backend alongside local models
-- Multi-user isolation and document ACL
-- Stronger retrieval (reranker, hybrid with filters)
-
-See `docs/architecture.md` and `docs/wbs.md` for design notes and work breakdown.
+| Item | Status |
+|------|--------|
+| Ingestion + hybrid RAG + agent | Done |
+| Score threshold + web/refuse | Done |
+| UI: chat, docs, settings | Done |
+| Hardware detect + GPU install helper | Done |
+| One-click start scripts | Done |
+| Golden evaluation set + metrics | Planned |
+| Streaming answers | Planned |
+| FastAPI API layer | Planned |
+| Reranker | Planned |
 
 ---
 
 ## Related project
 
-**[LocalBot](https://github.com/Ivan-Dambulov/LocalBot)** — private desktop AI assistant (local GGUF, hardware detection, web search, document chat).  
-LocalMind reuses and extends that inference approach inside a focused Agentic RAG architecture.
+**[LocalBot](https://github.com/Ivan-Dambulov/LocalBot)** — private desktop AI assistant (local GGUF, hardware-aware loading, web search, documents).  
+LocalMind reuses that inference approach inside a focused Agentic RAG system.
 
 ---
 
