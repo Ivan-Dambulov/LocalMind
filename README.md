@@ -1,8 +1,9 @@
 <img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-35-49" src="https://github.com/user-attachments/assets/9dc0d277-48b5-4108-b8dc-de2a7a58d1e2" />
+<img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-35-40" src="https://github.com/user-attachments/assets/a33625a9-e42c-41b1-82f2-aed9ee8eca88" />
 <img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-35-32" src="https://github.com/user-attachments/assets/6c5ea1d6-ab3b-4b4c-8419-43ee62a0d652" />
 <img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-35-22" src="https://github.com/user-attachments/assets/27d40463-0586-455a-a9f5-df35415955d2" />
 <img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-36-02" src="https://github.com/user-attachments/assets/957ef849-918c-4499-a62c-4da32c984bea" />
-<img width="1913" height="946" alt="Снимка на екрана на 2026-10-11 21-35-40" src="https://github.com/user-attachments/assets/a33625a9-e42c-41b1-82f2-aed9ee8eca88" />
+
 
 
 # LocalMind
